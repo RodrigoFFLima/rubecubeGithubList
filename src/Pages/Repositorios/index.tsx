@@ -21,7 +21,6 @@ export default function Repositorios({route, navigation}) {
   const {user} = route.params;
 
   const [gitUser, setGitUser] = React.useState<IGitUserProps>();
-  const [loading, setLoading] = React.useState<boolean>(true);
   const [modal, setModal] = React.useState<boolean>(false);
 
   function hadleNavigateToUsuariosPage() {
@@ -72,7 +71,6 @@ export default function Repositorios({route, navigation}) {
       } catch (e) {
         console.log(e);
       }
-      setLoading(false);
     };
 
     getRepositorio();
