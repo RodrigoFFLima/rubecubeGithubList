@@ -1,51 +1,24 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {
   FlatList,
   SafeAreaView,
-  StatusBar,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Modal,
-  Pressable,
   Button,
   TextInput,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome5';
+import {ScrollView} from 'react-native-gesture-handler';
 
-const DATA = [
-  {
-    id: '1',
-    title: 'ederzadravec',
-  },
-  {
-    id: '2',
-    title: 'ederzadravec',
-  },
-  {
-    id: '3',
-    title: 'ederzadravec',
-  },
-  {
-    id: '4',
-    title: 'ederzadravec',
-  },
-  {
-    id: '5',
-    title: 'ederzadravec',
-  },
-  {
-    id: '6',
-    title: 'ederzadravec',
-  },
-];
+import styles from './index.styles';
+
+import Icon from 'react-native-vector-icons/FontAwesome5';
 
 export default function Usuarios({navigation, route}) {
   const [users, setUsers] = React.useState<string[]>();
   const [modal, setModal] = React.useState(false);
   const [user, setUser] = React.useState('');
-  const [selectedId, setSelectedId] = useState(null);
 
   function hadleNavigateToRepositoriosPage(user: string) {
     navigation.navigate('Repositorios', {
@@ -57,6 +30,7 @@ export default function Usuarios({navigation, route}) {
     const newUsers = users || [];
     newUsers.push(user);
     setUsers(newUsers);
+    console.log(newUsers);
     setUser('');
     setModal(false);
   };
@@ -85,7 +59,7 @@ export default function Usuarios({navigation, route}) {
 
   const Item = ({item, onPress, style}) => (
     <TouchableOpacity onPress={onPress} style={[styles.item, style]}>
-      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.title}>{item}</Text>
     </TouchableOpacity>
   );
 
@@ -93,7 +67,8 @@ export default function Usuarios({navigation, route}) {
     return (
       <Item
         item={item}
-        onPress={() => navigation.navigate('Repositorios', {nome: 'Matheus'})}
+        key={item}
+        onPress={() => hadleNavigateToRepositoriosPage(item)}
       />
     );
   };
@@ -129,12 +104,13 @@ export default function Usuarios({navigation, route}) {
     <SafeAreaView style={styles.container}>
       {renderModal()}
 
-      <FlatList
-        data={DATA}
-        renderItem={renderItem}
-        keyExtractor={item => user.id}
-        extraData={selectedId}
-      />
+      <ScrollView>
+        <FlatList
+          data={users}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+        />
+      </ScrollView>
       <View style={styles.viewUserAdd}>
         <TouchableOpacity
           title="Repo"
@@ -148,96 +124,3 @@ export default function Usuarios({navigation, route}) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-  },
-  item: {
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    backgroundColor: '#5EB1BF',
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  title: {
-    fontSize: 20,
-    color: '#FFF',
-    borderRadius: 12,
-    backgroundColor: '#5EB1BF',
-    textAlign: 'justify',
-    alignItems: 'center',
-  },
-
-  viewUserAdd: {
-    padding: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-
-  btnAcessar: {
-    width: 60,
-    height: 60,
-    padding: 20,
-    marginVertical: 8,
-    backgroundColor: '#042A2B',
-    alignItems: 'center',
-    borderRadius: 10,
-    position: 'absolute',
-    bottom: 0,
-  },
-
-  containerModalAll: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  containerModal: {
-    height: 200,
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 4,
-    paddingTop: 16,
-    paddingBottom: 16,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  containerModalTitle: {
-    fontWeight: '700',
-    color: '#042A2B',
-    fontSize: 18,
-  },
-
-  containerModalInput: {
-    width: '80%',
-    borderBottomWidth: 1,
-    borderStyle: 'solid',
-    borderColor: 'black',
-    alignItems: 'center',
-    padding: 0,
-    textAlign: 'center',
-  },
-
-  containerModalBtn: {
-    backgroundColor: '#042A2B',
-    width: '80%',
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 4,
-  },
-
-  containerModalSave: {
-    color: '#fff',
-    fontSize: 18,
-  },
-});

@@ -1,74 +1,159 @@
-import React, {useState} from 'react';
+import React, {useEffect} from 'react';
 import {
   FlatList,
   SafeAreaView,
-  StatusBar,
-  StyleSheet,
   Text,
   Image,
   View,
+  Modal,
   TouchableOpacity,
 } from 'react-native';
+import {ScrollView} from 'react-native-gesture-handler';
+
+import {IGitUserProps, IReposProps} from './types';
+import api from '../../servicos/api';
+
+import styles from './index.styles';
+
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const DATA = [
-  {
-    id: '1',
-    title: 'Repo 1',
-  },
-  {
-    id: '2',
-    title: 'Repo 2',
-  },
-  {
-    id: '3',
-    title: 'Repo 3',
-  },
-  {
-    id: '4',
-    title: 'Repo 4',
-  },
-];
+export default function Repositorios({route, navigation}) {
+  const {user} = route.params;
 
-export default function Repositorios({navigation}) {
-  const [selectedId, setSelectedId] = useState(null);
+  const [gitUser, setGitUser] = React.useState<IGitUserProps>();
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const [modal, setModal] = React.useState<boolean>(false);
+
+  function hadleNavigateToUsuariosPage() {
+    navigation.navigate('Usuarios', {
+      delete: user,
+    });
+  }
+
+  function hadleNavigateToRepositorioN(repo: IReposProps) {
+    if (gitUser)
+      navigation.navigate('Repo', {
+        username: gitUser.userName,
+        img: gitUser.img || 'Sem Imagem',
+        description: repo.description || 'Sem descrição',
+        language: repo.language,
+        name: repo.name,
+        html_url: repo.html_url,
+      });
+  }
+
+  useEffect(() => {
+    const getRepositorio = async () => {
+      try {
+        const response = await api.get(`users/${user}`);
+        if (response.status === 200) {
+          const {avatar_url} = response.data;
+          const newRepos: IReposProps[] = [];
+
+          const responseRepo = await api.get(`users/${user}/repos`);
+          if (responseRepo.status === 200) {
+            responseRepo.data.map((data: IReposProps) => {
+              const newRepo: IReposProps = {
+                name: data.name,
+                language: data.language,
+                description: data.description,
+                html_url: data.html_url,
+              };
+              newRepos.push(newRepo);
+            });
+          }
+          const newGitUser = {
+            img: avatar_url,
+            userName: user,
+            repos: newRepos,
+          };
+          setGitUser(newGitUser);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+      setLoading(false);
+    };
+
+    getRepositorio();
+  }, []);
+
+  const renderModal = () => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={modal}
+      onRequestClose={() => {
+        setModal(false);
+      }}>
+      <View style={styles.containerModalAll}>
+        <View style={styles.containerModal}>
+          <Text style={styles.containerModalTitle}>Tem certeza ?</Text>
+          <Text style={styles.containerModalText}>
+            <Text>Tem certeza que deseja remover o usuário</Text>
+            <Text style={{fontWeight: 'bold'}}> {user}</Text>
+            <Text>?</Text>
+          </Text>
+          <TouchableOpacity
+            style={styles.containerModalBtn}
+            onPress={hadleNavigateToUsuariosPage}>
+            <Text style={styles.containerModalRemove}>
+              <Icon name="trash" size={20} color="#fff" /> Remover
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const Item = ({item, onPress, style}) => (
     <TouchableOpacity onPress={onPress} style={[styles.item, style]}>
-      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.title}>{item}</Text>
     </TouchableOpacity>
   );
 
   const renderItem = ({item}) => {
     return (
       <Item
-        item={item}
-        onPress={() => navigation.navigate('Repo', {nome: 'Matheus'})}
+        item={item.name}
+        key={item.name}
+        onPress={() => {
+          hadleNavigateToRepositorioN(item);
+        }}
       />
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.viewUserImg}>
-        <View style={styles.viewUser}>
-          <Image style={styles.imgUser}></Image>
+      {renderModal()}
+
+      <ScrollView>
+        <View style={styles.viewUserImg}>
+          <View style={styles.viewUser}>
+            {gitUser?.img ? (
+              <Image style={styles.imgUser} source={{uri: gitUser?.img}} />
+            ) : (
+              <Text>Sem Imagem</Text>
+            )}
+          </View>
+
+          <Text styles={styles.textUsuario}>
+            {gitUser?.userName || 'Usuário não encontrado'}
+          </Text>
         </View>
-
-        <Text styles={styles.textUsuario}>(username)</Text>
-      </View>
-      <View>
-        <FlatList
-          data={DATA}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          extraData={selectedId}
-        />
-      </View>
-
+        <View>
+          <FlatList
+            data={gitUser?.repos}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+          />
+        </View>
+      </ScrollView>
       <TouchableOpacity
-        title="Repo"
-        onPress={() => navigation.navigate('Repo', {nome: 'Matheus'})}
+        onPress={() => {
+          setModal(true);
+        }}
         style={styles.btnDeletar}>
         <Text style={{color: '#FFF', fontSize: 18}}>
           <Icon name="trash" size={20} color="#fff" /> Remover usuário
@@ -77,68 +162,3 @@ export default function Repositorios({navigation}) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-  },
-
-  item: {
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    backgroundColor: '#5EB1BF',
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-
-  title: {
-    fontSize: 20,
-    color: '#FFF',
-    borderRadius: 12,
-    backgroundColor: '#5EB1BF',
-    textAlign: 'justify',
-    alignItems: 'center',
-  },
-
-  btnDeletar: {
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    backgroundColor: '#CA4141',
-    alignItems: 'center',
-    borderRadius: 10,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-
-  viewUserImg: {
-    padding: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-
-  viewUser: {
-    width: 150,
-    height: 150,
-    backgroundColor: '#C4C4C4',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  imgUser: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-  },
-
-  textUsuario: {
-    padding: 24,
-    fontSize: 18,
-    textAlign: 'center',
-  },
-});
